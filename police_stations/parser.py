@@ -33,15 +33,27 @@ The police stations data downloaded from 'http://data.gov.tw' contains x, y coor
 
     line_count = 0
     processed_count = 0
+    header_title = []
+    column_empty_count = None
 
     for line in f:
 
         line_count = line_count + 1
         if line_count <= args.header:
+            if line_count == 1:  # if header exists, collect info about raw data
+                headers = line.rstrip().split(',')
+                for x in range(len(headers)):
+                    header_title.append(headers[x])
+                column_empty_count = [0] * len(headers)
             continue
 
         columns = line.rstrip().split(',')
         logging.debug(columns)
+
+        if column_empty_count:
+            for x in range(len(headers)):
+                if columns[x] == '':
+                    column_empty_count[x] += 1
 
         p = subprocess.Popen(
             ['proj', '-I', '+proj=tmerc', '+lat_0=0', '+lon_0=121',
@@ -58,6 +70,11 @@ The police stations data downloaded from 'http://data.gov.tw' contains x, y coor
             break
         
     logging.info('Total line: %d, processed: %d' % (line_count, processed_count))
+    if column_empty_count and sum(column_empty_count) > 0:
+        logging.info('Empty data column count:')
+        for x in range(len(header_title)):
+            if column_empty_count[x] > 0:
+                logging.info('%s: %d.' % (header_title[x], column_empty_count[x]))
 
     fout.close()
     f.close()
