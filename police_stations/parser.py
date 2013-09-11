@@ -19,7 +19,7 @@ def main():
         description='''
 The police stations data downloaded from 'http://data.gov.tw' contains x, y coordinates in TWD97 TM2 format (if you don't known what this means, see 'http://wiki.osgeo.org/wiki/Taiwan_datums' for basic concept). This script uses open source tool proj4 (http://proj.osgeo.org) to transform the x, y to WGS84 latlng format which can be located eaily on google map.''',
         epilog='Fell free to reuse, reproduction and/or redistribution.')
-    parser.add_argument('-k', '--skip', metavar='N', default=0, type=int, help='Skip first N line. Use to  skip the data header. [default: 0]')
+    parser.add_argument('--header', metavar='N', default=1, type=int, help='Specific first N lines are header rows, which will be skipped to processed. [default: 1]')
     parser.add_argument('-p', '--process', metavar='N', default=0, type=int, help='Process at most N line, 0 means all. [default: 0]')
     parser.add_argument('input_file', help='The raw data input file.')
     args = parser.parse_args()
@@ -37,7 +37,7 @@ The police stations data downloaded from 'http://data.gov.tw' contains x, y coor
     for line in f:
 
         line_count = line_count + 1
-        if line_count <= args.skip:
+        if line_count <= args.header:
             continue
 
         columns = line.rstrip().split(',')
