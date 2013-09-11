@@ -46,7 +46,7 @@ The police stations data downloaded from 'http://data.gov.tw' contains x, y coor
         p = subprocess.Popen(
             ['proj', '-I', '+proj=tmerc', '+lat_0=0', '+lon_0=121',
             '+x_0=250000', '+y_0=0', '+k=0.9999', '+ellps=WGS84',
-            '-f', '%.6f'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+            '-f', '%.6f', '-s'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         out = p.communicate(columns[3] + ' ' + columns[4])[0]
         p.stdout.close()
 
