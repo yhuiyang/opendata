@@ -9,7 +9,7 @@ import subprocess
 
 FORMAT = '%(asctime)s [%(levelname)s] %(message)s'
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
-logging.basicConfig(level=logging.DEBUG, format=FORMAT, datefmt=DATE_FORMAT)
+logging.basicConfig(level=logging.INFO, format=FORMAT, datefmt=DATE_FORMAT)
 
 
 def main():
@@ -57,7 +57,7 @@ The police stations data downloaded from 'http://data.gov.tw' contains x, y coor
         if args.process != 0 and processed_count >= args.process:
             break
         
-    logging.debug('Total line: %d, processed: %d' % (line_count, processed_count))
+    logging.info('Total line: %d, processed: %d' % (line_count, processed_count))
 
     fout.close()
     f.close()
