@@ -9,7 +9,6 @@ import subprocess
 
 FORMAT = '%(asctime)s [%(levelname)s] %(message)s'
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
-logging.basicConfig(level=logging.INFO, format=FORMAT, datefmt=DATE_FORMAT)
 
 
 def main():
@@ -21,8 +20,15 @@ The police stations data downloaded from 'http://data.gov.tw' contains x, y coor
         epilog='Feel free to reuse, reproduction and/or redistribution.')
     parser.add_argument('--header', metavar='N', default=1, type=int, help='Specific first N lines are header rows, which will be skipped during processing. [default: 1]')
     parser.add_argument('-p', '--process', metavar='N', default=0, type=int, help='Process at most N lines, 0 means all. [default: 0]')
+    parser.add_argument('-v', '--verbose', action='count', help='Enable verbose debug message.')
     parser.add_argument('input_file', help='The raw data input file.')
     args = parser.parse_args()
+
+    # config logging level
+    if args.verbose:
+        logging.basicConfig(level=logging.DEBUG, format=FORMAT, datefmt=DATE_FORMAT)
+    else:
+        logging.basicConfig(level=logging.INFO, format=FORMAT, datefmt=DATE_FORMAT)
 
     # prepare input/output files
     try:
