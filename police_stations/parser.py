@@ -24,6 +24,7 @@ The police stations data downloaded from 'http://data.gov.tw' contains x, y coor
     parser.add_argument('input_file', help='The raw data input file.')
     args = parser.parse_args()
 
+    # prepare input/output files
     try:
         f = open(args.input_file, 'r')
     except IOError:
@@ -31,11 +32,13 @@ The police stations data downloaded from 'http://data.gov.tw' contains x, y coor
         return
     fout = open(args.input_file + '.out', 'w')
 
+    # process start
     line_count = 0
     processed_count = 0
     header_title = []
     column_empty_count = None
 
+    # processed line by line
     for line in f:
 
         line_count = line_count + 1
@@ -69,12 +72,13 @@ The police stations data downloaded from 'http://data.gov.tw' contains x, y coor
         if args.process != 0 and processed_count >= args.process:
             break
         
+    # show some statistic
     logging.info('Total line: %d, processed: %d' % (line_count, processed_count))
     if column_empty_count and sum(column_empty_count) > 0:
         logging.info('Empty data column count:')
         for x in range(len(header_title)):
             if column_empty_count[x] > 0:
-                logging.info('%s: %d.' % (header_title[x], column_empty_count[x]))
+                logging.info('\t%s: %d.' % (header_title[x], column_empty_count[x]))
 
     fout.close()
     f.close()
