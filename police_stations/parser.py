@@ -18,7 +18,6 @@ def main():
         description='''
 The police stations data downloaded from 'http://data.gov.tw' contains x, y coordinates in TWD97 TM2 format (if you don't known what this means, see 'http://wiki.osgeo.org/wiki/Taiwan_datums' for basic concept). This script uses open source tool proj4 (http://proj.osgeo.org) to transform the x, y to WGS84 latlng format which can be located easily on google map.''',
         epilog='Feel free to reuse, reproduction and/or redistribution.')
-    parser.add_argument('--header', metavar='N', default=1, type=int, help='Specific first N lines are header rows, which will be skipped during processing. [default: 1]')
     parser.add_argument('-p', '--process', metavar='N', default=0, type=int, help='Process at most N lines, 0 means all. [default: 0]')
     parser.add_argument('-v', '--verbose', action='count', help='Enable verbose debug message.')
     parser.add_argument('input_file', help='The raw data input file.')
@@ -41,28 +40,26 @@ The police stations data downloaded from 'http://data.gov.tw' contains x, y coor
     # process start
     line_count = 0
     processed_count = 0
-    header_title = []
-    column_empty_count = None
 
     # processed line by line
     for line in f:
 
         line_count = line_count + 1
-        if line_count <= args.header:
-            if line_count == 1:  # if header exists, collect info about raw data
-                headers = line.rstrip().split(',')
-                for x in range(len(headers)):
-                    header_title.append(headers[x])
-                column_empty_count = [0] * len(headers)
+
+        # The 1st line is always the header line, just record the column title and skip processing
+        if line_count == 1:
+            header_title = line.rstrip().split(',')
+            column_empty_count = [0] * len(header_title)
             continue
 
+        # real data column
         columns = line.rstrip().split(',')
         logging.debug(columns)
 
-        if column_empty_count:
-            for x in range(len(headers)):
-                if columns[x] == '':
-                    column_empty_count[x] += 1
+        # check if data missing in each column
+        for x in range(len(header_title)):
+            if columns[x] == '':
+                column_empty_count[x] += 1
 
         p = subprocess.Popen(
             ['proj', '-I', '+proj=tmerc', '+lat_0=0', '+lon_0=121',
