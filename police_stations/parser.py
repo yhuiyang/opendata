@@ -50,6 +50,18 @@ The police stations data downloaded from 'http://data.gov.tw' contains x, y coor
         if line_count == 1:
             header_title = line.rstrip().split(',')
             column_empty_count = [0] * len(header_title)
+            try:
+                COL_ADDR = header_title.index('地址')
+            except ValueError:
+                COL_ADDR = -1
+            try:
+                COL_X = header_title.index('FLOOR_X')
+            except ValueError:
+                COL_X = -1
+            try:
+                COL_Y = header_title.index('FLOOR_Y')
+            except ValueError:
+                COL_Y = -1
             continue
 
         # real data column
@@ -61,15 +73,68 @@ The police stations data downloaded from 'http://data.gov.tw' contains x, y coor
             if columns[x] == '':
                 column_empty_count[x] += 1
 
-        p = subprocess.Popen(
-            ['proj', '-I', '+proj=tmerc', '+lat_0=0', '+lon_0=121',
-            '+x_0=250000', '+y_0=0', '+k=0.9999', '+ellps=WGS84',
-            '-f', '%.6f', '-s'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-        out = p.communicate(columns[3] + ' ' + columns[4])[0]
-        p.stdout.close()
+        updated_line = line.rstrip()
 
-        latlng = out.split('\t')
-        fout.write(line.rstrip() + ',' + latlng[0] + ',' + latlng[1])
+        # generate county/city, and town
+        if COL_ADDR >= 0:
+            strAddr = columns[COL_ADDR]
+            head, sep, tail = strAddr.partition('縣')
+            if sep and tail:
+                county_city = head + sep
+
+                strRestAddr = tail
+                head, sep, tail = strRestAddr.partition('市')
+                if sep and tail:
+                    town = head + sep
+                else:
+                    head, sep, tail = strRestAddr.partition('鄉')
+                    if sep and tail:
+                        town = head + sep
+                    else:
+                        head, sep, tail = strRestAddr.partition('鎮')
+                        if sep and tail:
+                            town = head + sep
+                        else:
+                            town = ''
+            else:
+                head, sep, tail = strAddr.partition('市')
+                if sep and tail:
+                    county_city = head + sep
+
+                    strRestAddr = tail
+                    head, sep, tail = strRestAddr.partition('區')
+                    if sep and tail:
+                        town = head + sep
+                    else:
+                        town = ''
+                else:
+                    county_city = ''
+                    town = ''
+                    logging.warning('No county/city in address: %s' % strAddr)
+        else:
+            county_city = ''
+            town = ''
+
+        logging.debug('County/City = %s, Town = %s' % (county_city, town))
+        updated_line += ',' + county_city + ',' + town
+
+        # convert TWD97 TM2 (x,y) to WGS84 (lat,lng)
+        if COL_X >= 0 and COL_Y >= 0:
+            p = subprocess.Popen(
+                ['proj', '-I', '+proj=tmerc', '+lat_0=0', '+lon_0=121',
+                '+x_0=250000', '+y_0=0', '+k=0.9999', '+ellps=WGS84',
+                '-f', '%.6f', '-s'], stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE)
+            out = p.communicate(columns[COL_X] + ' ' + columns[COL_Y])[0]
+            p.stdout.close()
+            latlng = out.split('\t')
+            updated_line += ',' + latlng[0] + ',' + latlng[1]
+        else:
+            logging.warning('No x and/or y in TWD97 format coordinations')
+            updated_line += ',,'
+
+        # write back processed line
+        fout.write(updated_line)
 
         processed_count = processed_count + 1
         if args.process != 0 and processed_count >= args.process:
