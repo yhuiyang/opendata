@@ -5,10 +5,12 @@
 import logging
 import argparse
 import subprocess
+import requests
 
 
 FORMAT = '%(asctime)s [%(levelname)s] %(message)s'
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
+ADDR_COUNTY_DATA_URL = 'http://download.post.gov.tw/post/download/county_h.csv'
 
 
 def main():
@@ -29,6 +31,21 @@ The police stations data downloaded from 'http://data.gov.tw' contains x, y coor
     else:
         logging.basicConfig(level=logging.INFO, format=FORMAT, datefmt=DATE_FORMAT)
 
+    county_data_available = False
+    # collect address county/city and township data
+    r = requests.get(ADDR_COUNTY_DATA_URL)
+    if r.status_code == 200:
+        county_list = []
+        big5_csv = r.content
+        utf8_csv = big5_csv.decode('big5').encode('utf8')
+        line_list = utf8_csv.splitlines()
+        for line in line_list:
+            columns = line.split(',')
+            county_list.append(columns[1])
+        county_data_available = True
+    else:
+        logging.warning('Address county city data is not available.')
+
     # prepare input/output files
     try:
         f = open(args.input_file, 'r')
@@ -40,6 +57,7 @@ The police stations data downloaded from 'http://data.gov.tw' contains x, y coor
     # process start
     line_count = 0
     processed_count = 0
+    suspicious_addr = 0
 
     # processed line by line
     for line in f:
@@ -78,6 +96,15 @@ The police stations data downloaded from 'http://data.gov.tw' contains x, y coor
         # generate county/city, and town
         if COL_ADDR >= 0:
             strAddr = columns[COL_ADDR]
+            if county_data_available:
+                found = False
+                for county in county_list:
+                    if strAddr.startswith(county):
+                        found = True
+                        break
+                if not found:
+                    suspicious_addr += 1
+                    logging.warning('[%d]Addr(%s) may not be completed!' % (suspicious_addr, strAddr))
             head, sep, tail = strAddr.partition('縣')
             if sep and tail:
                 county_city = head + sep
