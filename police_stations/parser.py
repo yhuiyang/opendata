@@ -13,6 +13,45 @@ DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 ADDR_COUNTY_DATA_URL = 'http://download.post.gov.tw/post/download/county_h.csv'
 
 
+def fix_addr(input_addr_string):
+
+    output_addr_string = input_addr_string
+
+    # change '臺' to '台' if it locates at 1st char in address
+    if output_addr_string.find('臺') == 0:
+        output_addr_string = output_addr_string.replace('臺', '台', 2)
+
+    # other minor fixs
+    output_addr_string = output_addr_string.replace('南投縣鹿谷鎮', '南投縣鹿谷鄉')
+    output_addr_string = output_addr_string.replace('屏東縣潮洲鎮', '屏東縣潮州鎮')
+    output_addr_string = output_addr_string.replace('桃園縣楊梅鎮', '桃園縣楊梅市')
+    if output_addr_string.startswith('苗栗市'):
+        output_addr_string = output_addr_string.replace('苗栗市', '苗栗縣苗栗市')
+    output_addr_string = output_addr_string.replace('高雄市茄定區', '高雄市茄萣區')
+    output_addr_string = output_addr_string.replace('高雄市旗山里', '高雄市旗山區旗山里')
+    output_addr_string = output_addr_string.replace('高雄高大寮區', '高雄市大寮區')
+    output_addr_string = output_addr_string.replace('新竹市竹光路', '新竹市北區竹光路')
+    output_addr_string = output_addr_string.replace('新竹縣竹南鎮', '苗栗縣竹南鎮')
+    output_addr_string = output_addr_string.replace('嘉義市中山路', '嘉義市東區中山路')
+    output_addr_string = output_addr_string.replace('嘉義市世賢路三段', '嘉義市西區世賢路三段')
+    output_addr_string = output_addr_string.replace('嘉義市北港路', '嘉義市西區北港路')
+    output_addr_string = output_addr_string.replace('嘉義市民族路', '嘉義市西區民族路')
+    output_addr_string = output_addr_string.replace('嘉義市民權', '嘉義市東區民權')
+    output_addr_string = output_addr_string.replace('嘉義市吳鳳南路', '嘉義市東區吳鳳南路')
+    output_addr_string = output_addr_string.replace('嘉義市忠孝路', '嘉義市東區忠孝路')
+    output_addr_string = output_addr_string.replace('嘉義市博愛路', '嘉義市西區博愛路')
+    output_addr_string = output_addr_string.replace('台北市仁愛3段', '台北市大安區仁愛路三段')
+    output_addr_string = output_addr_string.replace('台北市南京東路3段', '台北市松山區南京東路三段')
+    output_addr_string = output_addr_string.replace('台東縣台東文化里市', '台東縣台東市文化里')
+    output_addr_string = output_addr_string.replace('澎湖縣湖西村', '澎湖縣湖西鄉湖西村')
+    output_addr_string = output_addr_string.replace('臺南市白河區白河里中正路128號', '臺南市白河區白河里中山路128號')
+    output_addr_string = output_addr_string.replace('臺南市玉井區豊里村58號', '臺南市玉井區豐里村58號')
+    output_addr_string = output_addr_string.replace('台南市左區區', '台南市左鎮區')
+    output_addr_string = output_addr_string.replace('台南市台南市', '台南市')
+    output_addr_string = output_addr_string.replace('台南市西區', '台南市中西區')
+
+    return output_addr_string
+
 def main():
 
     # command line parser
@@ -69,6 +108,14 @@ The police stations data downloaded from 'http://data.gov.tw' contains x, y coor
             header_title = line.rstrip().split(',')
             column_empty_count = [0] * len(header_title)
             try:
+                COL_NAME = header_title.index('單位')
+            except ValueError:
+                COL_NAME = -1
+            try:
+                COL_PHONE = header_title.index('電話')
+            except ValueError:
+                COL_PHONE = -1
+            try:
                 COL_ADDR = header_title.index('地址')
             except ValueError:
                 COL_ADDR = -1
@@ -84,14 +131,24 @@ The police stations data downloaded from 'http://data.gov.tw' contains x, y coor
 
         # real data column
         columns = line.rstrip().split(',')
-        logging.debug(columns)
+
+        # fix address
+        if COL_ADDR >= 0:
+            columns[COL_ADDR] = fix_addr(columns[COL_ADDR])
 
         # check if data missing in each column
         for x in range(len(header_title)):
             if columns[x] == '':
                 column_empty_count[x] += 1
 
-        updated_line = line.rstrip()
+        # collect necessory columns only
+        updated_line = ''
+        for col in [COL_NAME, COL_PHONE, COL_ADDR, COL_X, COL_Y]:
+            if col >= 0:
+                if len(updated_line) > 0:
+                    updated_line += ',' + columns[col]
+                else:
+                    updated_line += columns[col]
 
         # generate county/city, and town
         if COL_ADDR >= 0:
