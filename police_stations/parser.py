@@ -206,7 +206,7 @@ The police stations data downloaded from 'http://data.gov.tw' contains x, y coor
         updated_line += ',' + county_city + ',' + town
 
         # convert TWD97 TM2 (x,y) to WGS84 (lat,lng)
-        if COL_X >= 0 and COL_Y >= 0:
+        if COL_X >= 0 and COL_Y >= 0 and len(columns[COL_X]) > 0 and len(columns[COL_Y]) > 0:
             p = subprocess.Popen(
                 ['proj', '-I', '+proj=tmerc', '+lat_0=0', '+lon_0=121',
                 '+x_0=250000', '+y_0=0', '+k=0.9999', '+ellps=WGS84',
@@ -214,14 +214,14 @@ The police stations data downloaded from 'http://data.gov.tw' contains x, y coor
                 stdout=subprocess.PIPE)
             out = p.communicate(columns[COL_X] + ' ' + columns[COL_Y])[0]
             p.stdout.close()
-            latlng = out.split('\t')
+            latlng = out.rstrip().split('\t')
             updated_line += ',' + latlng[0] + ',' + latlng[1]
         else:
             logging.warning('No x and/or y in TWD97 format coordinations')
             updated_line += ',,'
 
         # write back processed line
-        fout.write(updated_line)
+        fout.write(updated_line + '\n')
 
         processed_count = processed_count + 1
         if args.process != 0 and processed_count >= args.process:
