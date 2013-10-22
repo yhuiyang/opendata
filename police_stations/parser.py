@@ -21,7 +21,7 @@ def fix_addr(input_addr_string):
     if output_addr_string.find('臺') == 0:
         output_addr_string = output_addr_string.replace('臺', '台', 2)
 
-    # other minor fixs
+    # other minor fixs (tuned for 1010611 data set)
     output_addr_string = output_addr_string.replace('南投縣鹿谷鎮', '南投縣鹿谷鄉')
     output_addr_string = output_addr_string.replace('屏東縣潮洲鎮', '屏東縣潮州鎮')
     output_addr_string = output_addr_string.replace('桃園縣楊梅鎮', '桃園縣楊梅市')
@@ -49,6 +49,9 @@ def fix_addr(input_addr_string):
     output_addr_string = output_addr_string.replace('台南市左區區', '台南市左鎮區')
     output_addr_string = output_addr_string.replace('台南市台南市', '台南市')
     output_addr_string = output_addr_string.replace('台南市西區', '台南市中西區')
+
+    # other fixs (tuned for 1020914 data set)
+    output_addr_string = output_addr_string.replace('台東縣池上村', '台東縣池上鄉')
 
     return output_addr_string
 
